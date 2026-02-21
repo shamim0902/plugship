@@ -10,7 +10,7 @@ const DEFAULT_TEMPLATE = `# .plugshipignore
 #
 # The following are always excluded by default (no need to list them):
 #   node_modules, .git, .github, .DS_Store, .env, *.log,
-#   .vscode, .idea, tests, phpunit.xml, build
+#   .vscode, .idea, tests, phpunit.xml, builds
 
 # Source files (uncomment as needed)
 # src/**

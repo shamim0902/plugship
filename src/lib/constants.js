@@ -27,5 +27,5 @@ export const DEFAULT_EXCLUDES = [
   '*.log',
   'tests/**',
   'phpunit.xml',
-  'build/**',
+  'builds/**',
 ];

@@ -13,7 +13,8 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(node:*)",
-      "Bash(plugship --version:*)"
+      "Bash(plugship --version:*)",
+      "Bash(git status:*)"
     ]
   }
 }

@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { access } from 'node:fs/promises';
+import { access, stat } from 'node:fs/promises';
 import { select, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 import { getSite, listSites } from './config.js';
@@ -83,12 +83,37 @@ export async function deploy({ siteName, activate = true, dryRun = false, all = 
   // Detect plugin
   const plugin = await detectPlugin(cwd);
 
-  // Build ZIP once (shared across all targets)
-  const spin = logger.spinner('Creating ZIP archive...');
-  spin.start();
-  const { zipPath, size } = await createPluginZip(cwd, plugin.slug);
-  const sizeMB = (size / 1024 / 1024).toFixed(2);
-  spin.succeed(`ZIP created (${sizeMB} MB)`);
+  // Check for existing ZIP
+  const existingZipPath = join(cwd, 'builds', `${plugin.slug}.zip`);
+  let zipPath, size;
+
+  try {
+    const zipStat = await stat(existingZipPath);
+    const sizeMB = (zipStat.size / 1024 / 1024).toFixed(2);
+    logger.info(`Existing ZIP found: builds/${plugin.slug}.zip (${sizeMB} MB)`);
+    const action = await select({
+      message: 'What do you want to do?',
+      choices: [
+        { name: 'Use existing ZIP', value: 'existing' },
+        { name: 'Build a new ZIP', value: 'rebuild' },
+      ],
+    });
+    if (action === 'rebuild') {
+      const spin = logger.spinner('Creating ZIP archive...');
+      spin.start();
+      ({ zipPath, size } = await createPluginZip(cwd, plugin.slug));
+      spin.succeed(`ZIP created (${(size / 1024 / 1024).toFixed(2)} MB)`);
+    } else {
+      zipPath = existingZipPath;
+      size = zipStat.size;
+      logger.success(`Using existing ZIP (${sizeMB} MB)`);
+    }
+  } catch {
+    const spin = logger.spinner('Creating ZIP archive...');
+    spin.start();
+    ({ zipPath, size } = await createPluginZip(cwd, plugin.slug));
+    spin.succeed(`ZIP created (${(size / 1024 / 1024).toFixed(2)} MB)`);
+  }
 
   // Dry run — show summary and exit
   if (dryRun) {

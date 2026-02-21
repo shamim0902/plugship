@@ -21,7 +21,7 @@ async function loadIgnorePatterns(sourceDir) {
 }
 
 export async function createPluginZip(sourceDir, slug) {
-  const buildDir = join(sourceDir, 'build');
+  const buildDir = join(sourceDir, 'builds');
   await mkdir(buildDir, { recursive: true });
   const zipName = `${slug}.zip`;
   const zipPath = join(buildDir, zipName);

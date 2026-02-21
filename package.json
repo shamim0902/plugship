@@ -1,6 +1,6 @@
 {
   "name": "plugship",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Deploy local WordPress plugins to remote sites from the command line",
   "type": "module",
   "bin": {
