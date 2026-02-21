@@ -4,16 +4,33 @@
   "description": "Deploy local WordPress plugins to remote sites from the command line",
   "type": "module",
   "bin": {
-    "plugship": "./bin/plugship.js"
+    "plugship": "bin/plugship.js"
   },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=18.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shamim0902/plugship.git"
+  },
+  "homepage": "https://github.com/shamim0902/plugship#readme",
+  "bugs": {
+    "url": "https://github.com/shamim0902/plugship/issues"
+  },
+  "author": "shamim0902",
   "keywords": [
     "wordpress",
     "deploy",
     "plugin",
-    "cli"
+    "cli",
+    "wp",
+    "plugship"
   ],
   "license": "MIT",
   "dependencies": {
