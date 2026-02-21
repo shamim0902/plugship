@@ -19,7 +19,6 @@ const DEFAULT_TEMPLATE = `# .plugshipignore
 # Build tools
 package.json
 package-lock.json
-composer.json
 composer.lock
 webpack.config.js
 `;

@@ -138,24 +138,98 @@ export async function deploy({ siteName, activate = true, dryRun = false, all = 
     // Upload
     s.start('Uploading plugin...');
     let result;
+    let uploadWarnings = null;
     try {
       result = await api.deployPlugin(zipPath, `${plugin.slug}.zip`);
-      s.succeed('Plugin uploaded and installed');
     } catch (err) {
-      s.fail('Upload failed');
-      if (targets.length > 1) {
-        logger.error(`Deploy to ${site.name} failed: ${err.message}`);
-        continue;
+      // Non-JSON response — plugin might still have installed
+      if (err.body && err.body.rawWarnings) {
+        s.succeed('Plugin uploaded');
+        uploadWarnings = err.body.rawWarnings;
+      } else {
+        s.fail('Upload failed');
+        if (targets.length > 1) {
+          logger.error(`Deploy to ${site.name} failed: ${err.message}`);
+          continue;
+        }
+        throw new DeployError(`Upload failed: ${err.message}`);
       }
-      throw new DeployError(`Deploy failed: ${err.message}`);
     }
 
+    // If we got warnings instead of clean JSON, verify installation via WP API
+    if (uploadWarnings) {
+      s.start('Verifying installation...');
+      try {
+        const pluginInfo = await api.getPlugin(`${plugin.slug}/${plugin.slug}`);
+        s.succeed('Plugin installed successfully');
+        result = {
+          success: true,
+          name: pluginInfo.name || plugin.name,
+          version: pluginInfo.version || plugin.version,
+          activated: pluginInfo.status === 'active',
+        };
+        for (const w of uploadWarnings) {
+          logger.warn(w);
+        }
+      } catch {
+        // Try alternative slug format (slug/main-file)
+        try {
+          const plugins = await api.getPlugins();
+          const found = plugins.find((p) => p.textdomain === plugin.slug || p.plugin.startsWith(plugin.slug + '/'));
+          if (found) {
+            s.succeed('Plugin installed successfully');
+            result = {
+              success: true,
+              name: found.name || plugin.name,
+              version: found.version || plugin.version,
+              activated: found.status === 'active',
+            };
+            for (const w of uploadWarnings) {
+              logger.warn(w);
+            }
+          } else {
+            s.fail('Installation could not be verified');
+            for (const w of uploadWarnings) {
+              logger.error(w);
+            }
+            if (targets.length > 1) continue;
+            throw new DeployError('Plugin installation could not be verified.');
+          }
+        } catch (verifyErr) {
+          if (verifyErr instanceof DeployError) throw verifyErr;
+          s.fail('Installation could not be verified');
+          for (const w of uploadWarnings) {
+            logger.error(w);
+          }
+          if (targets.length > 1) continue;
+          throw new DeployError('Plugin installation could not be verified.');
+        }
+      }
+    } else {
+      // Clean JSON response
+      if (!result.success) {
+        s.fail('Installation failed');
+        logger.error('Plugin uploaded but installation failed.');
+        if (targets.length > 1) continue;
+        throw new DeployError('Installation failed on remote server.');
+      }
+      s.succeed('Plugin uploaded and installed');
+    }
+
+    // Show warnings if any
+    if (result.warnings) {
+      logger.warn(`Warning: ${result.warnings}`);
+    }
+
+    // Activation status
     if (result.activated) {
       logger.success(`Plugin "${result.name || plugin.name}" v${result.version || plugin.version} is active on ${site.url}`);
     } else {
       logger.success(`Plugin "${result.name || plugin.name}" v${result.version || plugin.version} installed on ${site.url}`);
-      if (activate && !result.activated) {
-        logger.info('Plugin was not activated (may already be active or activation was skipped).');
+      if (activate && result.activation_error) {
+        logger.error(`Activation failed: ${result.activation_error}`);
+      } else if (activate) {
+        logger.warn('Plugin installed but not activated. It may have errors — check WordPress admin.');
       }
     }
   }

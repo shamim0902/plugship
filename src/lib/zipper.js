@@ -61,5 +61,10 @@ function matchGlob(filePath, pattern) {
   if (pattern.startsWith('*.')) {
     return filePath.endsWith(pattern.slice(1));
   }
+  // Dotfile pattern — match root-level files/dirs starting with .
+  if (pattern === '.*') {
+    const firstSegment = filePath.split('/')[0];
+    return firstSegment.startsWith('.');
+  }
   return filePath === pattern;
 }

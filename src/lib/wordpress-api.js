@@ -88,14 +88,53 @@ export class WordPressApi {
       body: form.getBuffer(),
     });
 
-    const contentType = res.headers.get('content-type') || '';
-    const body = contentType.includes('application/json') ? await res.json() : await res.text();
+    const rawBody = await res.text();
 
-    if (!res.ok) {
-      const msg = typeof body === 'object' && body.message ? body.message : `Upload failed (HTTP ${res.status})`;
-      throw new ApiError(msg, res.status, body);
+    // Try to extract JSON from response (may have HTML errors prepended)
+    const body = this._extractJson(rawBody);
+
+    if (body) {
+      if (!res.ok && body.message) {
+        throw new ApiError(body.message, res.status, body);
+      }
+      return body;
     }
 
-    return body;
+    // No valid JSON found — response is pure HTML/error
+    // Extract readable error from HTML
+    const warnings = this._extractHtmlErrors(rawBody);
+    throw new ApiError(
+      'non_json_response',
+      res.status,
+      { rawWarnings: warnings }
+    );
+  }
+
+  _extractJson(text) {
+    // Try direct parse first
+    try {
+      return JSON.parse(text);
+    } catch {
+      // JSON might be buried after HTML errors — find it
+      const jsonStart = text.indexOf('{"');
+      if (jsonStart > 0) {
+        try {
+          return JSON.parse(text.slice(jsonStart));
+        } catch {
+          // ignore
+        }
+      }
+      return null;
+    }
+  }
+
+  _extractHtmlErrors(html) {
+    const errors = [];
+    const regex = /<b>(Warning|Fatal error|Parse error|Notice)<\/b>:\s*(.*?)<br/gi;
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      errors.push(match[1] + ': ' + match[2].replace(/<[^>]+>/g, '').trim());
+    }
+    return errors.length > 0 ? errors : ['Server returned non-JSON response'];
   }
 }

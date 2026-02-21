@@ -22,17 +22,10 @@ export const PLUGIN_HEADER_FIELDS = {
 };
 
 export const DEFAULT_EXCLUDES = [
+  '.*',
   'node_modules/**',
-  '.git/**',
-  '.DS_Store',
-  '.env',
   '*.log',
-  '.vscode/**',
-  '.idea/**',
   'tests/**',
   'phpunit.xml',
-  '.phpunit.result.cache',
-  '.github/**',
   'build/**',
-  '.plugshipignore',
 ];
