@@ -2,119 +2,200 @@
 
 > Deploy WordPress plugins from your terminal to any WordPress site instantly.
 
+[![npm version](https://img.shields.io/npm/v/plugship.svg)](https://www.npmjs.com/package/plugship)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 A simple CLI tool to deploy local WordPress plugins to remote WordPress sites. No FTP, no cPanel — just `plugship deploy`.
 
-## Quick Start
+**[View on npm →](https://www.npmjs.com/package/plugship)**
 
-### 1. Install
+---
+
+## ✨ Features
+
+- 🚀 **One-command deploys** — `plugship deploy` and you're done
+- 🔐 **Secure** — uses WordPress Application Passwords (not your main password)
+- 🎯 **Multi-site** — configure once, deploy to staging/production/any site
+- 📦 **Smart packaging** — auto-excludes dev files (node_modules, tests, src, etc.)
+- 🔄 **Auto-updates** — replaces existing plugins automatically
+- 🌐 **No server access needed** — works entirely via WordPress REST API
+
+---
+
+## 📦 Installation
+
+### Global Install (Recommended)
 
 ```bash
 npm install -g plugship
 ```
 
-### 2. Install Receiver Plugin
+### Verify Installation
 
-Download and install the companion plugin on your WordPress site:
+```bash
+plugship --version
+```
 
-**[Download plugship-receiver.zip](https://github.com/shamim0902/plugship-receiver/releases/latest/download/plugship-receiver.zip)**
+---
+
+## 🚀 Quick Start
+
+### Step 1: Install the Receiver Plugin
+
+The `plugship-receiver` plugin must be installed on your WordPress site first. It adds secure REST endpoints to receive plugin uploads.
+
+**[Download plugship-receiver.zip →](https://github.com/shamim0902/plugship-receiver/releases/latest/download/plugship-receiver.zip)**
 
 1. Go to **Plugins > Add New > Upload Plugin** in WordPress admin
-2. Upload the ZIP file
+2. Upload `plugship-receiver.zip`
 3. Activate **PlugShip Receiver**
 
-### 3. Configure Your Site
+**[View receiver plugin source →](https://github.com/shamim0902/plugship-receiver)**
+
+### Step 2: Create an Application Password
+
+1. Go to **Users > Profile** in WordPress admin
+2. Scroll to **Application Passwords**
+3. Enter "plugship" as the name
+4. Click **Add New Application Password**
+5. Copy the generated password (you'll need it in the next step)
+
+**[Learn more about Application Passwords →](https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/)**
+
+### Step 3: Configure Your First Site
 
 ```bash
 plugship init
 ```
 
 You'll be prompted for:
-- Site alias (e.g., "production")
-- WordPress site URL
-- Admin username
-- [Application Password](https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/) (create one in Users > Profile)
+- **Site alias** — a short name like "production" or "staging"
+- **WordPress site URL** — e.g., `https://example.com`
+- **Admin username** — your WordPress admin username
+- **Application Password** — paste the password from Step 2
 
-### 4. Deploy
+### Step 4: Deploy Your Plugin
 
-Navigate to your plugin directory and run:
+Navigate to your WordPress plugin directory:
 
 ```bash
+cd my-awesome-plugin/
 plugship deploy
 ```
 
-Done! Your plugin is deployed and activated.
+✅ Done! Your plugin is deployed and activated on the remote site.
 
 ---
 
-## Commands
+## 📚 Commands
 
 ### `plugship deploy`
 
 Deploy the plugin from the current directory.
 
 ```bash
-plugship deploy                 # Deploy to default site
-plugship deploy --site staging  # Deploy to specific site
-plugship deploy --all           # Deploy to all configured sites
-plugship deploy --dry-run       # Preview without uploading
-plugship deploy --no-activate   # Deploy without activating
+# Deploy to default site
+plugship deploy
+
+# Deploy to a specific site
+plugship deploy --site staging
+
+# Deploy to all configured sites
+plugship deploy --all
+
+# Preview what would be deployed (no upload)
+plugship deploy --dry-run
+
+# Deploy without activating the plugin
+plugship deploy --no-activate
 ```
+
+**What happens:**
+1. Detects your plugin from PHP headers
+2. Creates a ZIP excluding dev files
+3. Uploads to the WordPress site
+4. Installs/updates the plugin
+5. Activates it (unless `--no-activate`)
+
+---
 
 ### `plugship init`
 
-Add a new WordPress site.
+Add a new WordPress site to your configuration.
 
 ```bash
 plugship init
 ```
+
+Interactive prompts guide you through:
+- Site alias
+- URL
+- Username
+- Application Password
+
+The CLI automatically tests the connection and verifies the receiver plugin is active.
+
+---
 
 ### `plugship status`
 
 Check if a site is ready for deployment.
 
 ```bash
-plugship status                 # Check default site
-plugship status --site staging  # Check specific site
+# Check default site
+plugship status
+
+# Check a specific site
+plugship status --site staging
 ```
+
+Verifies:
+- ✅ REST API is accessible
+- ✅ Credentials are valid
+- ✅ User has `install_plugins` capability
+- ✅ Receiver plugin is active
+
+---
 
 ### `plugship sites`
 
 Manage your saved sites.
 
 ```bash
-plugship sites list                 # List all sites
-plugship sites set-default staging  # Set default site
-plugship sites remove staging       # Remove a site
-```
+# List all configured sites
+plugship sites list
 
-### `plugship ignore`
+# Set the default site
+plugship sites set-default production
 
-Exclude files from deployment.
-
-```bash
-plugship ignore                     # Create .plugshipignore template
-plugship ignore "src/**" "*.map"    # Add patterns
+# Remove a site
+plugship sites remove staging
 ```
 
 ---
 
-## Ignoring Files
+### `plugship ignore`
 
-Create a `.plugshipignore` file to exclude files from deployment:
+Manage file exclusions for deployment.
 
 ```bash
+# Create .plugshipignore with default template
 plugship ignore
+
+# Add specific patterns
+plugship ignore "src/**" "*.map" "composer.json"
 ```
 
-This creates a template with common exclusions. Edit it to add your own:
+Creates a `.plugshipignore` file in your plugin directory. Example:
 
 ```
 # .plugshipignore
 src/**
 *.map
-package.json
-composer.json
 webpack.config.js
+package.json
+package-lock.json
+composer.json
 ```
 
 **Already excluded by default:**
@@ -122,64 +203,108 @@ webpack.config.js
 
 ---
 
-## How It Works
+## 💡 Usage Examples
 
-1. **Detects your plugin** from the WordPress plugin header in your PHP files
-2. **Creates a ZIP** with only the files you need (excludes dev files)
-3. **Uploads via REST API** to the WordPress site using the receiver plugin
-4. **Installs and activates** the plugin automatically
+### Multi-Site Workflow
 
-The [plugship-receiver](https://github.com/shamim0902/plugship-receiver) plugin adds secure REST endpoints to accept the upload. Only admin users with Application Passwords can deploy.
-
----
-
-## Examples
-
-### Deploy to Staging
+Configure multiple environments:
 
 ```bash
-cd my-plugin/
-plugship deploy --site staging
+plugship init  # Add production
+plugship init  # Add staging
+plugship init  # Add local test site
 ```
 
-### Deploy to All Sites
+Deploy to each:
+
+```bash
+plugship deploy --site staging     # Test on staging first
+plugship deploy --site production  # Then push to prod
+```
+
+Or deploy everywhere at once:
 
 ```bash
 plugship deploy --all
 ```
 
-### Preview What Would Be Deployed
+---
+
+### Preview Before Deploy
+
+See what would be deployed without uploading:
 
 ```bash
 plugship deploy --dry-run
 ```
 
-### Check Connection Before Deploying
+Output shows:
+- Plugin name, version, slug
+- ZIP file size
+- Target site(s)
+- Activation setting
+
+---
+
+### Exclude Dev Files
+
+Auto-suggest on first deploy, or create manually:
 
 ```bash
-plugship status
+plugship ignore
+```
+
+Edit `.plugshipignore` to add project-specific exclusions:
+
+```
+# Custom exclusions
+assets/src/**
+*.scss
+*.ts
+tsconfig.json
 ```
 
 ---
 
-## Requirements
+## 🔧 How It Works
 
-- **Node.js** 18 or higher
-- **WordPress** 5.8 or higher
-- **Admin account** with Application Passwords enabled
+```
+┌──────────────┐
+│ Your Plugin  │
+│  Directory   │
+└──────┬───────┘
+       │
+       │ plugship deploy
+       ▼
+┌──────────────┐
+│   ZIP File   │  (excludes dev files)
+└──────┬───────┘
+       │
+       │ Upload via REST API
+       ▼
+┌──────────────────────┐
+│  WordPress Site      │
+│  (plugship-receiver) │
+└──────┬───────────────┘
+       │
+       │ Install/Update
+       ▼
+┌──────────────┐
+│    Plugin    │
+│   Active!    │
+└──────────────┘
+```
+
+The [plugship-receiver](https://github.com/shamim0902/plugship-receiver) plugin adds two REST endpoints:
+
+- `GET /wp-json/plugship/v1/status` — Health check
+- `POST /wp-json/plugship/v1/deploy` — Accept plugin ZIP upload
+
+WordPress's native `Plugin_Upgrader` with `overwrite_package => true` handles installation. Existing plugins are replaced automatically.
 
 ---
 
-## Security
-
-- All credentials are stored locally in `~/.plugship/config.json` with `0600` permissions
-- Uses WordPress Application Passwords (not your main password)
-- Only users with `install_plugins` capability can deploy
-- All uploads are authenticated via WordPress REST API
-
----
-
-## Configuration
+## ⚙️ Configuration
 
 Config file: `~/.plugship/config.json`
 
@@ -201,43 +326,120 @@ Config file: `~/.plugship/config.json`
 }
 ```
 
+**File permissions:** `0600` (only you can read/write)
+
 ---
 
-## Troubleshooting
+## 🔒 Security
+
+- ✅ **Application Passwords only** — never uses your main WordPress password
+- ✅ **Local storage** — credentials stored in `~/.plugship/config.json` with restricted permissions
+- ✅ **Capability checks** — only users with `install_plugins` can deploy
+- ✅ **ZIP validation** — receiver plugin validates MIME type and ZIP integrity
+- ✅ **Path traversal protection** — rejects ZIPs with malicious entries
+- ✅ **50 MB upload limit** — prevents abuse
+
+---
+
+## 🛠️ Requirements
+
+- **Node.js** 18 or higher
+- **WordPress** 5.8 or higher
+- **Admin account** with Application Passwords enabled
+
+---
+
+## ❓ Troubleshooting
 
 ### "Receiver plugin not found"
 
-The plugship-receiver plugin isn't active on your WordPress site.
+**Problem:** The plugship-receiver plugin isn't active on your WordPress site.
 
+**Solution:**
 1. Download: https://github.com/shamim0902/plugship-receiver/releases/latest/download/plugship-receiver.zip
-2. Upload and activate in WordPress admin
+2. Upload via **Plugins > Add New > Upload Plugin**
+3. Activate **PlugShip Receiver**
+4. Run `plugship status` to verify
+
+---
 
 ### "Authentication failed"
 
-Your Application Password is incorrect.
+**Problem:** Your Application Password is incorrect or expired.
 
+**Solution:**
 1. Go to **Users > Profile** in WordPress admin
-2. Generate a new Application Password
-3. Run `plugship init` again
+2. Delete the old Application Password
+3. Create a new one
+4. Run `plugship init` again and paste the new password
+
+---
 
 ### "Cannot reach REST API"
 
-Your WordPress REST API isn't accessible.
+**Problem:** The WordPress REST API isn't accessible.
 
-- Check that `https://yoursite.com/wp-json/` loads
-- Disable security plugins temporarily to test
-- Check for firewall/hosting restrictions
-
----
-
-## Links
-
-- [npm package](https://www.npmjs.com/package/plugship)
-- [Receiver plugin](https://github.com/shamim0902/plugship-receiver)
-- [Report issues](https://github.com/shamim0902/plugship/issues)
+**Solution:**
+1. Check that `https://yoursite.com/wp-json/` loads in your browser
+2. Temporarily disable security plugins (Wordfence, iThemes, etc.)
+3. Check hosting firewall rules
+4. Verify mod_rewrite is enabled (permalinks must work)
 
 ---
 
-## License
+### Deploy fails with "permission denied"
 
-MIT
+**Problem:** User doesn't have `install_plugins` capability.
+
+**Solution:**
+- Ensure you're using an **Administrator** account
+- Other roles (Editor, Author, etc.) can't install plugins
+
+---
+
+## 📖 Plugin Detection
+
+PlugShip detects your plugin by scanning `.php` files in the current directory for WordPress plugin headers:
+
+```php
+<?php
+/**
+ * Plugin Name: My Awesome Plugin
+ * Version: 1.0.0
+ * Text Domain: my-awesome-plugin
+ */
+```
+
+- The `Text Domain` is used as the plugin slug
+- If no `Text Domain` is found, the slug is derived from the plugin name
+- Version is read from the header and displayed during deploy
+
+---
+
+## 🌐 Links
+
+- **npm package:** https://www.npmjs.com/package/plugship
+- **Receiver plugin:** https://github.com/shamim0902/plugship-receiver
+- **Report issues:** https://github.com/shamim0902/plugship/issues
+
+---
+
+## 📄 License
+
+MIT © [shamim0902](https://github.com/shamim0902)
+
+---
+
+## 🙌 Contributing
+
+Contributions are welcome! Please open an issue or PR.
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit your changes: `git commit -am 'Add my feature'`
+4. Push: `git push origin feature/my-feature`
+5. Open a Pull Request
+
+---
+
+**Made with ❤️ for the WordPress community**
