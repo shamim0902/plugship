@@ -20,8 +20,9 @@ npm install -g plugship
 
 The `plugship-receiver` companion plugin must be installed on your WordPress site. It adds a REST endpoint that accepts plugin ZIP uploads.
 
-1. Get [plugship-receiver](https://github.com/plugship/plugship-receiver) and copy `plugship-receiver.php` to your site's `wp-content/plugins/` directory
-2. Activate **PlugShip Receiver** from the WordPress admin Plugins page
+1. Download [plugship-receiver.zip](https://github.com/shamim0902/plugship-receiver/releases/latest/download/plugship-receiver.zip) or get it from the [repo](https://github.com/shamim0902/plugship-receiver)
+2. Go to **Plugins > Add New > Upload Plugin** in WordPress admin
+3. Upload the ZIP and activate **PlugShip Receiver**
 
 ### 2. Create an Application Password
 
