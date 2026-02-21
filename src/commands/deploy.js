@@ -6,6 +6,8 @@ export async function deployCommand(options) {
     await deploy({
       siteName: options.site,
       activate: options.activate,
+      dryRun: options.dryRun,
+      all: options.all,
     });
   } catch (err) {
     logger.error(err.message);

@@ -69,13 +69,25 @@ If you have multiple sites configured, you will be prompted to select one.
 ```bash
 plugship deploy --site <name>   # Deploy to a specific site
 plugship deploy --no-activate   # Deploy without activating the plugin
+plugship deploy --dry-run       # Preview what would be deployed without uploading
+plugship deploy --all           # Deploy to all configured sites
+```
+
+### Check Site Status
+
+Verify connection, credentials, and receiver plugin before deploying:
+
+```bash
+plugship status                 # Check default or select a site
+plugship status --site <name>   # Check a specific site
 ```
 
 ### Manage Sites
 
 ```bash
-plugship sites list             # List all saved sites
-plugship sites remove <name>    # Remove a saved site
+plugship sites list                 # List all saved sites
+plugship sites remove <name>        # Remove a saved site
+plugship sites set-default <name>   # Set the default site
 ```
 
 ## Commands
@@ -84,8 +96,14 @@ plugship sites remove <name>    # Remove a saved site
 | --- | --- |
 | `plugship init` | Configure a new WordPress site |
 | `plugship deploy` | Deploy the plugin from the current directory |
+| `plugship deploy --dry-run` | Preview deploy without uploading |
+| `plugship deploy --all` | Deploy to all configured sites |
+| `plugship status` | Check site connection and receiver status |
 | `plugship sites list` | List all saved sites |
 | `plugship sites remove <name>` | Remove a saved site |
+| `plugship sites set-default <name>` | Set the default site |
+| `plugship ignore` | Create `.plugshipignore` with default template |
+| `plugship ignore <patterns...>` | Add patterns to `.plugshipignore` |
 | `plugship --help` | Show help |
 | `plugship --version` | Show version |
 
@@ -103,6 +121,43 @@ The CLI detects your plugin by scanning `.php` files in the current directory fo
 ```
 
 The `Text Domain` is used as the plugin slug. If not provided, the slug is derived from the plugin name.
+
+## Ignoring Files
+
+Use the `ignore` command to create a `.plugshipignore` file with a default template:
+
+```bash
+plugship ignore
+```
+
+Or add specific patterns directly:
+
+```bash
+plugship ignore "src/**" "*.map" composer.json
+```
+
+You can also manually create or edit `.plugshipignore` in your plugin directory to exclude files and folders from the deployment ZIP:
+
+```
+# .plugshipignore
+src/**
+assets/scss/**
+webpack.config.js
+package.json
+package-lock.json
+composer.json
+composer.lock
+*.map
+```
+
+- One pattern per line
+- Lines starting with `#` are comments
+- Blank lines are ignored
+- Supports `dir/**` (directory and contents), `*.ext` (extension match), and exact names
+
+The following are always excluded by default:
+
+`node_modules`, `.git`, `.DS_Store`, `.env`, `*.log`, `.vscode`, `.idea`, `tests`, `phpunit.xml`, `.phpunit.result.cache`, `.github`, `build`
 
 ## Configuration
 

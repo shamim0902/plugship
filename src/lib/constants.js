@@ -34,4 +34,5 @@ export const DEFAULT_EXCLUDES = [
   '.phpunit.result.cache',
   '.github/**',
   'build/**',
+  '.plugshipignore',
 ];

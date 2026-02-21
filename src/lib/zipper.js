@@ -1,14 +1,31 @@
 import { createWriteStream } from 'node:fs';
 import { join } from 'node:path';
-import { stat, mkdir } from 'node:fs/promises';
+import { stat, mkdir, readFile } from 'node:fs/promises';
 import archiver from 'archiver';
 import { DEFAULT_EXCLUDES } from './constants.js';
+
+async function loadIgnorePatterns(sourceDir) {
+  const patterns = [...DEFAULT_EXCLUDES];
+  try {
+    const content = await readFile(join(sourceDir, '.plugshipignore'), 'utf-8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        patterns.push(trimmed);
+      }
+    }
+  } catch {
+    // No .plugshipignore file — use defaults only
+  }
+  return patterns;
+}
 
 export async function createPluginZip(sourceDir, slug) {
   const buildDir = join(sourceDir, 'build');
   await mkdir(buildDir, { recursive: true });
   const zipName = `${slug}.zip`;
   const zipPath = join(buildDir, zipName);
+  const excludes = await loadIgnorePatterns(sourceDir);
 
   await new Promise((resolve, reject) => {
     const output = createWriteStream(zipPath);
@@ -22,7 +39,7 @@ export async function createPluginZip(sourceDir, slug) {
 
     archive.pipe(output);
     archive.directory(sourceDir, slug, (entry) => {
-      for (const pattern of DEFAULT_EXCLUDES) {
+      for (const pattern of excludes) {
         if (matchGlob(entry.name, pattern)) return false;
       }
       return entry;
