@@ -67,7 +67,7 @@ export class WordPressApi {
   }
 
   async checkReceiver() {
-    return this.request('/wpdeploy/v1/status');
+    return this.request('/plugship/v1/status');
   }
 
   async deployPlugin(zipPath, filename) {
@@ -78,7 +78,7 @@ export class WordPressApi {
       contentType: 'application/zip',
     });
 
-    const url = `${this.baseUrl}/wp-json/wpdeploy/v1/deploy`;
+    const url = `${this.baseUrl}/wp-json/plugship/v1/deploy`;
     const res = await fetch(url, {
       method: 'POST',
       headers: {

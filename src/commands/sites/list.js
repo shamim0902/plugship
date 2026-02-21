@@ -7,7 +7,7 @@ export async function listSitesCommand() {
   const names = Object.keys(sites);
 
   if (names.length === 0) {
-    logger.info('No sites configured. Run "wpdeploy init" to add one.');
+    logger.info('No sites configured. Run "plugship init" to add one.');
     return;
   }
 

@@ -5,6 +5,7 @@ import { detectPlugin } from './plugin-detector.js';
 import { createPluginZip } from './zipper.js';
 import { WordPressApi } from './wordpress-api.js';
 import { DeployError, ConfigError } from './errors.js';
+import { RECEIVER_DOWNLOAD_URL } from './constants.js';
 import * as logger from './logger.js';
 
 async function resolveSite(siteName) {
@@ -14,7 +15,7 @@ async function resolveSite(siteName) {
   const names = Object.keys(sites);
 
   if (names.length === 0) {
-    throw new ConfigError('No sites configured. Run "wpdeploy init" first.');
+    throw new ConfigError('No sites configured. Run "plugship init" first.');
   }
 
   if (names.length === 1) {
@@ -58,7 +59,7 @@ export async function deploy({ siteName, activate = true }) {
   } catch {
     spin.fail('Receiver plugin not found');
     throw new DeployError(
-      'The wpdeploy-receiver plugin is not active on the target site. Install it first.'
+      `The plugship-receiver plugin is not active on the target site. Download and install it first.\n  ${RECEIVER_DOWNLOAD_URL}`
     );
   }
 

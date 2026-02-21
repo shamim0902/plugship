@@ -1,10 +1,10 @@
 {
-  "name": "wpdeploy",
+  "name": "plugship",
   "version": "1.0.0",
   "description": "Deploy local WordPress plugins to remote sites from the command line",
   "type": "module",
   "bin": {
-    "wpdeploy": "./bin/wpdeploy.js"
+    "plugship": "./bin/plugship.js"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -3,7 +3,7 @@ import { Command } from 'commander';
 const program = new Command();
 
 program
-  .name('wpdeploy')
+  .name('plugship')
   .description('Deploy local WordPress plugins to remote sites')
   .version('1.0.0');
 

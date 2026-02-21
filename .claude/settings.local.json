@@ -6,7 +6,12 @@
       "WebFetch(domain:wp-cli.org)",
       "WebFetch(domain:core.trac.wordpress.org)",
       "Bash(node --version:*)",
-      "Bash(npm:*)"
+      "Bash(npm:*)",
+      "Bash(plugship --help:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

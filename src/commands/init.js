@@ -2,6 +2,7 @@ import { input, password } from '@inquirer/prompts';
 import chalk from 'chalk';
 import { addSite } from '../lib/config.js';
 import { WordPressApi } from '../lib/wordpress-api.js';
+import { RECEIVER_DOWNLOAD_URL } from '../lib/constants.js';
 import * as logger from '../lib/logger.js';
 
 export async function initCommand() {
@@ -76,7 +77,7 @@ export async function initCommand() {
   }
 
   // Check receiver plugin
-  spin.start('Checking for wpdeploy-receiver plugin...');
+  spin.start('Checking for plugship-receiver plugin...');
   try {
     const status = await api.checkReceiver();
     spin.succeed(`Receiver plugin active (v${status.version})`);
@@ -84,13 +85,13 @@ export async function initCommand() {
     spin.warn('Receiver plugin not detected');
     console.log('');
     logger.warn(
-      'The wpdeploy-receiver plugin must be installed and activated on your WordPress site.'
+      'The plugship-receiver plugin must be installed and activated on your WordPress site.'
     );
     console.log(
       chalk.dim(
-        '  1. Copy receiver-plugin/wpdeploy-receiver.php to your site\'s wp-content/plugins/ directory\n' +
-        '  2. Activate "WPDeploy Receiver" in the WordPress admin\n' +
-        '  3. Run "wpdeploy init" again to verify\n'
+        `  1. Download: ${RECEIVER_DOWNLOAD_URL}\n` +
+        '  2. Upload and activate in WordPress admin (Plugins > Add New > Upload Plugin)\n' +
+        '  3. Run "plugship init" again to verify\n'
       )
     );
   }
