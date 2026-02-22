@@ -2,6 +2,10 @@
 
 > Deploy WordPress plugins from your terminal to any WordPress site instantly.
 
+
+<img width="326" height="220" alt="carbon" src="https://github.com/user-attachments/assets/fdd7fe5f-582b-41fe-a45a-4a74b5824c6d" />
+
+
 [![npm version](https://img.shields.io/npm/v/plugship.svg)](https://www.npmjs.com/package/plugship)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
@@ -177,6 +181,7 @@ plugship sites remove staging
 ### `plugship ignore`
 
 Manage file exclusions for deployment.
+NB: If you have already build ignore file like .distignore then it will use it by default.
 
 ```bash
 # Create .plugshipignore with default template
@@ -263,6 +268,7 @@ assets/src/**
 *.ts
 tsconfig.json
 ```
+
 
 ---
 
