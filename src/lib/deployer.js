@@ -4,7 +4,7 @@ import { select, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 import { getSite, listSites } from './config.js';
 import { detectPlugin } from './plugin-detector.js';
-import { createPluginZip } from './zipper.js';
+import { createPluginZip, getIgnoreSource } from './zipper.js';
 import { WordPressApi } from './wordpress-api.js';
 import { DeployError, ConfigError } from './errors.js';
 import { RECEIVER_DOWNLOAD_URL } from './constants.js';
@@ -48,18 +48,19 @@ async function getAllSites() {
 }
 
 async function checkIgnoreFile(cwd) {
-  try {
-    await access(join(cwd, '.plugshipignore'));
-  } catch {
-    logger.warn('No .plugshipignore file found.');
-    const create = await confirm({
-      message: 'Create one with default template?',
-      default: true,
-    });
-    if (create) {
-      const { ignoreCommand } = await import('../commands/ignore.js');
-      await ignoreCommand([]);
-    }
+  const source = await getIgnoreSource(cwd);
+  if (source) {
+    logger.info(`Using ${source} for file exclusions`);
+    return;
+  }
+  logger.warn('No .plugshipignore or .distignore file found.');
+  const create = await confirm({
+    message: 'Create .plugshipignore with default template?',
+    default: true,
+  });
+  if (create) {
+    const { ignoreCommand } = await import('../commands/ignore.js');
+    await ignoreCommand([]);
   }
 }
 
@@ -90,23 +91,46 @@ export async function deploy({ siteName, activate = true, dryRun = false, all = 
   try {
     const zipStat = await stat(existingZipPath);
     const sizeMB = (zipStat.size / 1024 / 1024).toFixed(2);
-    logger.info(`Existing ZIP found: builds/${plugin.slug}.zip (${sizeMB} MB)`);
-    const action = await select({
-      message: 'What do you want to do?',
-      choices: [
-        { name: 'Use existing ZIP', value: 'existing' },
-        { name: 'Build a new ZIP', value: 'rebuild' },
-      ],
-    });
-    if (action === 'rebuild') {
+
+    // Check if ignore file was modified after the ZIP was built
+    let ignoreStale = false;
+    for (const ignoreFile of ['.plugshipignore', '.distignore']) {
+      try {
+        const ignoreStat = await stat(join(cwd, ignoreFile));
+        if (ignoreStat.mtimeMs > zipStat.mtimeMs) {
+          ignoreStale = true;
+        }
+        break;
+      } catch {
+        // file not found, try next
+      }
+    }
+
+    if (ignoreStale) {
+      logger.warn('Ignore file changed since last build — rebuilding ZIP...');
       const spin = logger.spinner('Creating ZIP archive...');
       spin.start();
       ({ zipPath, size } = await createPluginZip(cwd, plugin.slug));
       spin.succeed(`ZIP created (${(size / 1024 / 1024).toFixed(2)} MB)`);
     } else {
-      zipPath = existingZipPath;
-      size = zipStat.size;
-      logger.success(`Using existing ZIP (${sizeMB} MB)`);
+      logger.info(`Existing ZIP found: builds/${plugin.slug}.zip (${sizeMB} MB)`);
+      const action = await select({
+        message: 'What do you want to do?',
+        choices: [
+          { name: 'Use existing ZIP', value: 'existing' },
+          { name: 'Build a new ZIP', value: 'rebuild' },
+        ],
+      });
+      if (action === 'rebuild') {
+        const spin = logger.spinner('Creating ZIP archive...');
+        spin.start();
+        ({ zipPath, size } = await createPluginZip(cwd, plugin.slug));
+        spin.succeed(`ZIP created (${(size / 1024 / 1024).toFixed(2)} MB)`);
+      } else {
+        zipPath = existingZipPath;
+        size = zipStat.size;
+        logger.success(`Using existing ZIP (${sizeMB} MB)`);
+      }
     }
   } catch {
     const spin = logger.spinner('Creating ZIP archive...');
