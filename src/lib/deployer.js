@@ -1,5 +1,5 @@
-import { join } from 'node:path';
-import { access, stat } from 'node:fs/promises';
+import { join, dirname, relative } from 'node:path';
+import { access, readFile, stat, writeFile } from 'node:fs/promises';
 import { select, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 import { getSite, listSites } from './config.js';
@@ -64,6 +64,87 @@ async function checkIgnoreFile(cwd) {
   }
 }
 
+async function findGitRepoRoot(startDir) {
+  let current = startDir;
+
+  while (true) {
+    try {
+      await access(join(current, '.git'));
+      return current;
+    } catch {
+      const parent = dirname(current);
+      if (parent === current) {
+        return null;
+      }
+      current = parent;
+    }
+  }
+}
+
+function normalizePattern(pattern) {
+  const trimmed = pattern.trim();
+  if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('!')) {
+    return null;
+  }
+
+  let normalized = trimmed.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+  if (normalized.endsWith('/**')) {
+    normalized = normalized.slice(0, -3);
+  }
+  return normalized || null;
+}
+
+function hasIgnoreRule(content, targetPath) {
+  return content.split('\n').some((line) => normalizePattern(line) === targetPath);
+}
+
+async function directoryExists(path) {
+  try {
+    const info = await stat(path);
+    return info.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+async function ensureBuildDirIgnored(cwd) {
+  const repoRoot = await findGitRepoRoot(cwd);
+  if (!repoRoot) return;
+
+  const gitignorePath = join(repoRoot, '.gitignore');
+  let content = '';
+  try {
+    content = await readFile(gitignorePath, 'utf-8');
+  } catch {
+    // .gitignore does not exist yet; create it when first entry is added.
+  }
+
+  for (const dirName of ['build', 'builds']) {
+    const dirPath = join(cwd, dirName);
+    if (!(await directoryExists(dirPath))) continue;
+
+    const targetPath = relative(repoRoot, dirPath).replace(/\\/g, '/').replace(/\/+$/, '');
+    if (!targetPath || targetPath.startsWith('..')) continue;
+    if (hasIgnoreRule(content, targetPath)) continue;
+
+    const ignoreEntry = `/${targetPath}/`;
+    content = content
+      ? `${content.trimEnd()}\n${ignoreEntry}\n`
+      : `${ignoreEntry}\n`;
+
+    await writeFile(gitignorePath, content);
+    logger.success(`Added "${ignoreEntry}" to .gitignore.`);
+  }
+}
+
+async function buildZip(cwd, slug) {
+  const spin = logger.spinner('Creating ZIP archive...');
+  spin.start();
+  const result = await createPluginZip(cwd, slug);
+  spin.succeed(`ZIP created (${(result.size / 1024 / 1024).toFixed(2)} MB)`);
+  return result;
+}
+
 function printPluginInfo(plugin, site) {
   console.log('');
   logger.info(`Plugin:  ${plugin.name}`);
@@ -108,10 +189,7 @@ export async function deploy({ siteName, activate = true, dryRun = false, all = 
 
     if (ignoreStale) {
       logger.warn('Ignore file changed since last build — rebuilding ZIP...');
-      const spin = logger.spinner('Creating ZIP archive...');
-      spin.start();
-      ({ zipPath, size } = await createPluginZip(cwd, plugin.slug));
-      spin.succeed(`ZIP created (${(size / 1024 / 1024).toFixed(2)} MB)`);
+      ({ zipPath, size } = await buildZip(cwd, plugin.slug));
     } else {
       logger.info(`Existing ZIP found: builds/${plugin.slug}.zip (${sizeMB} MB)`);
       const action = await select({
@@ -122,10 +200,7 @@ export async function deploy({ siteName, activate = true, dryRun = false, all = 
         ],
       });
       if (action === 'rebuild') {
-        const spin = logger.spinner('Creating ZIP archive...');
-        spin.start();
-        ({ zipPath, size } = await createPluginZip(cwd, plugin.slug));
-        spin.succeed(`ZIP created (${(size / 1024 / 1024).toFixed(2)} MB)`);
+        ({ zipPath, size } = await buildZip(cwd, plugin.slug));
       } else {
         zipPath = existingZipPath;
         size = zipStat.size;
@@ -133,11 +208,10 @@ export async function deploy({ siteName, activate = true, dryRun = false, all = 
       }
     }
   } catch {
-    const spin = logger.spinner('Creating ZIP archive...');
-    spin.start();
-    ({ zipPath, size } = await createPluginZip(cwd, plugin.slug));
-    spin.succeed(`ZIP created (${(size / 1024 / 1024).toFixed(2)} MB)`);
+    ({ zipPath, size } = await buildZip(cwd, plugin.slug));
   }
+
+  const zipSizeMB = (size / 1024 / 1024).toFixed(2);
 
   // Dry run — show summary and exit
   if (dryRun) {
@@ -146,7 +220,7 @@ export async function deploy({ siteName, activate = true, dryRun = false, all = 
     logger.info(`Plugin:  ${plugin.name}`);
     logger.info(`Version: ${plugin.version}`);
     logger.info(`Slug:    ${plugin.slug}`);
-    logger.info(`ZIP:     ${zipPath} (${sizeMB} MB)`);
+    logger.info(`ZIP:     ${zipPath} (${zipSizeMB} MB)`);
     logger.info(`Activate: ${activate ? 'yes' : 'no'}`);
     console.log('');
     logger.info('Target sites:');
@@ -283,5 +357,6 @@ export async function deploy({ siteName, activate = true, dryRun = false, all = 
     }
   }
 
+  await ensureBuildDirIgnored(cwd);
   console.log('');
 }

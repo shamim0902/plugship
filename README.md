@@ -26,6 +26,19 @@ A simple CLI tool to deploy local WordPress plugins to remote WordPress sites. N
 
 ---
 
+## 📝 Changelog
+
+### 1.0.6 - 2026-02-28
+
+- Added interactive site picker for `plugship sites remove`.
+- Added interactive site picker for `plugship sites set-default`.
+- Added automatic `.gitignore` updates after successful deploy for `build/` and `builds/`.
+- Fixed dry-run ZIP size reporting.
+
+See full history in [`CHANGELOG.md`](./CHANGELOG.md).
+
+---
+
 ## 📦 Installation
 
 ### Global Install (Recommended)
@@ -172,8 +185,14 @@ plugship sites list
 # Set the default site
 plugship sites set-default production
 
-# Remove a site
+# Set default using interactive picker
+plugship sites set-default
+
+# Remove a site by name
 plugship sites remove staging
+
+# Remove a site using interactive picker
+plugship sites remove
 ```
 
 ---

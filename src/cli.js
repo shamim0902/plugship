@@ -63,16 +63,16 @@ sites
   });
 
 sites
-  .command('remove <name>')
-  .description('Remove a saved site')
+  .command('remove [name]')
+  .description('Remove a saved site (prompts to select when no name is provided)')
   .action(async (name) => {
     const { removeSiteCommand } = await import('./commands/sites/remove.js');
     await removeSiteCommand(name);
   });
 
 sites
-  .command('set-default <name>')
-  .description('Set the default site')
+  .command('set-default [name]')
+  .description('Set the default site (prompts to select when no name is provided)')
   .action(async (name) => {
     const { setDefaultCommand } = await import('./commands/sites/set-default.js');
     await setDefaultCommand(name);

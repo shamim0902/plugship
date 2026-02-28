@@ -1,6 +1,6 @@
 {
   "name": "plugship",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Deploy local WordPress plugins to remote sites from the command line",
   "type": "module",
   "bin": {
@@ -9,6 +9,7 @@
   "files": [
     "bin/",
     "src/",
+    "CHANGELOG.md",
     "README.md",
     "LICENSE"
   ],
@@ -19,7 +20,7 @@
     "type": "git",
     "url": "git+https://github.com/shamim0902/plugship.git"
   },
-  "homepage": "https://github.com/shamim0902/plugship#readme",
+  "homepage": "https://vibecoder.bd/plugship/",
   "bugs": {
     "url": "https://github.com/shamim0902/plugship/issues"
   },
